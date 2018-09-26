@@ -71,7 +71,7 @@ function addPlotPanel(plot, data_sources, name, reader, options = {}) {
         tabix_reader: reader,
         params: options,
     }]);
-    const mods = {
+    const assoc_mods = {
         namespace: {
             default: namespace,
             assoc: namespace,
@@ -79,10 +79,14 @@ function addPlotPanel(plot, data_sources, name, reader, options = {}) {
         },
         id: namespace,
         title: { text: name },
-        y_index: -1,
     };
-    const layout = LocusZoom.Layouts.get('panel', 'association', mods);
-    plot.addPanel(layout);
+    plot.addPanel(LocusZoom.Layouts.get('panel', 'association_credible_set', assoc_mods));
+
+    const credset_mods = {
+        namespace: { assoc: namespace },
+        id: `${namespace}_credset`,
+    };
+    plot.addPanel(LocusZoom.Layouts.get('panel', 'annotation_credible_set', credset_mods));
 }
 
 export { createPlot, addPlotPanel };
