@@ -1,7 +1,7 @@
 /* global LocusZoom */
 import makeParser from './parsers';
 
-LocusZoom.KnownDataSources.extend('AssociationLZ', 'TabixAssociationLZ', {
+LocusZoom.KnownDataSources.extend('CredibleAssociationLZ', 'TabixAssociationLZ', {
     parseInit(init) {
         this.params = init.params; // delimiter, marker_col, pval_col, is_log_p
         this.parser = makeParser(this.params);
@@ -48,7 +48,7 @@ function createPlot(selector, name, reader, params = {}) {
 
     // Second, specify what kind of information to display. This demo uses a pre-defined set of
     // panels with common display options.
-    const layout = LocusZoom.Layouts.get('plot', 'standard_association', {
+    const layout = LocusZoom.Layouts.get('plot', 'association_credible_set', {
         state: {
             chr: '10',
             start: 123802119,
