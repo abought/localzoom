@@ -40,6 +40,8 @@ function createPlot(selector, name, reader, params = {}) {
             url: `${apiBase}annotation/genes/`,
             params: { source: 2 },
         }])
+        // Special: this demo uses the GWAS catalog for build 38. TODO: Make configurable.
+        .add('catalog', ['GwasCatalogLZ', { url: `${apiBase}annotation/gwascatalog/results/`, params: { source: 1 } }])
         .add('recomb', ['RecombLZ', {
             url: `${apiBase}annotation/recomb/results/`,
             params: { source: 15 },
@@ -48,7 +50,7 @@ function createPlot(selector, name, reader, params = {}) {
 
     // Second, specify what kind of information to display. This demo uses a pre-defined set of
     // panels with common display options.
-    const layout = LocusZoom.Layouts.get('plot', 'standard_association', {
+    const layout = LocusZoom.Layouts.get('plot', 'association_catalog', {
         state: {
             chr: '10',
             start: 123802119,
