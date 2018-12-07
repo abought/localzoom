@@ -2,12 +2,14 @@
 import Vue from 'vue';
 
 import App from './App.vue';
-import { createPlot, addPanels, sourceName } from './util/lz-helpers';
+import { createPlot, createPhewas, addPanels, sourceName } from './util/lz-helpers';
 import { createTableConfig } from './util/credible-set-ui';
 
 Vue.config.productionTip = false;
 
 const PLOT_ID = '#lz-plot';
+const PHEWAS_PLOT_ID = '#lz-phewas';
+
 const CREDSET_TABLE_SELECTOR = $('#credible-set-table');
 const CREDSET_OPTION_SELECTOR = $('#credible-set-datasets');
 const CREDSET_BUTTON_SELECTOR = $('#credible-set-download');
@@ -25,6 +27,44 @@ app.$on('config-ready', (source_options, plot_options) => {
             // Show the UI
             $('#credible-set-ui').removeClass('d-none');
         }
+        // Notify the phewas plot whenever any point on any association panel is selected
+        // TODO: Refactor code to separate concerns
+        // FIXME: We should only be drawing a phewas plot if the data is build 37 (no phewebs
+        //    presently support anything else)
+        window.plot.on('element_clicked', (eventData) => {
+            if (eventData.sourceID.indexOf('association_') === -1) {
+                return;
+            }
+            // Strip namespacing to get the base field names
+            const scatter_data = Object.keys(eventData.data).reduce((acc, val) => {
+                const [prefix, short_key] = val.split(':');
+                if (prefix.startsWith('assoc')) { // Ensure pvalue isn't from, eg, gwas catalog
+                    acc[short_key] = eventData.data[val];
+                }
+                return acc;
+            }, {});
+
+            const variant_name = scatter_data.variant;
+            const variant_data = {
+                id: -1,
+                trait_group: 'Your results',
+                trait_label: 'Your results',
+                log_pvalue: scatter_data.log_pvalue,
+            };
+
+            if (window.plot_phewas) {
+                window.plot_phewas.applyState({
+                    variant: variant_name,
+                    phewas_push: variant_data,
+                });
+            } else {
+                [window.plot_phewas, window.datasources_phewas] = createPhewas(
+                    PHEWAS_PLOT_ID,
+                    variant_name,
+                    variant_data,
+                );
+            }
+        });
     } else {
         addPanels(window.plot, window.data_sources, source_options, plot_options);
     }

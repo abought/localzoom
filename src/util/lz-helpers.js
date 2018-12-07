@@ -29,6 +29,43 @@ LocusZoom.KnownDataSources.extend('AssociationLZ', 'TabixAssociationLZ', {
     },
 });
 
+LocusZoom.KnownDataSources.extend('PheWASLZ', 'PhewasPheweb', {
+    getURL(state, chain, fields) {
+        // http://pheweb.sph.umich.edu:5003/api/variant/6-32379383-G-A
+        if (state.phewas_push) {
+            chain.header.phewas_push = state.phewas_push;
+        }
+        let variant = state.variant || this.params.variant;
+        variant = variant.replace(/[:_/]/g, '-');
+        return `${this.url}api/variant/${variant}`;
+    },
+    normalizeResponse(data) {
+        // Convert pheweb payloads to UM key/ value names
+        // http://portaldev.sph.umich.edu/docs/api/v1/?shell#phewas-all-available-results-for-a-given-variant
+
+        // The phewas scatter plot calls for these fields:
+        //  fields: ['{{namespace[phewas]}}id', '{{namespace[phewas]}}log_pvalue',
+        //  '{{namespace[phewas]}}trait_group', '{{namespace[phewas]}}trait_label'],
+
+        if (!data) { // PheWeb returns null if variant data not found
+            throw Error('No PheWAS data available for this variant');
+        }
+        return data.phenos.map((item, index) => ({
+            id: index,
+            trait_group: item.category,
+            trait_label: item.phenostring,
+            log_pvalue: -Math.log10(item.pval),
+        }));
+    },
+    annotateData(records, chain) {
+        // Provide a mechanism where plot.state.phewas_push can be used to add records
+        if (chain.header.phewas_push) {
+            records.push(chain.header.phewas_push);
+        }
+        return records;
+    },
+});
+
 /**
  * A source name cannot contain special characters (this would break the layout)
  *
@@ -184,4 +221,29 @@ function addPanels(plot, data_sources, source_options, plot_options) {
     });
 }
 
-export { createPlot, sourceName, addPanels };
+
+/**
+ * Create a simple PheWAS plot
+ */
+function createPhewas(selector, variant_name, variant_data) {
+    // TODO: The way the variant is shown is not very good- tacked on at end and lost in the noise
+    const layout = LocusZoom.Layouts.get('plot', 'standard_phewas', {
+        height: 250,
+        min_height: 200,
+        state: {
+            variant: variant_name,
+            phewas_push: variant_data,
+        },
+        // Don't show the gene track etc in the final result
+        panels: [LocusZoom.Layouts.get('panel', 'phewas', { unnamespaced: true, proportional_height: 0.45 })],
+    });
+
+    // TODO: Make base urls configurable?
+    const data_sources = new LocusZoom.DataSources()
+        .add('phewas', ['PhewasPheweb', { url: 'http://pheweb.sph.umich.edu:5003/' }]);
+    const plot = LocusZoom.populate(selector, data_sources, layout);
+    return [plot, data_sources];
+}
+
+
+export { createPlot, sourceName, addPanels, createPhewas };
