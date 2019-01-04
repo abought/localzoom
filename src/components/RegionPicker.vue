@@ -87,7 +87,8 @@ export default {
             fetch(url)
                 .then(resp => resp.json())
                 .then((data) => {
-                    this.search_results = data.data.filter(item => !item.error);
+                    // Limit the API response to a set of valid, and useful, search results
+                    this.search_results = data.data.filter(item => !item.error && (item.type !== 'region'));
                 });
         },
     },

@@ -1,4 +1,4 @@
-/* global LocusZoom */
+/* global LocusZoom */ // FIXME: do as modules
 import { makeParser } from './parsers';
 
 LocusZoom.KnownDataSources.extend('AssociationLZ', 'TabixAssociationLZ', {
