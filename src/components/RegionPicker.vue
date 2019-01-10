@@ -11,7 +11,7 @@
 </template>
 
 <script>
-import { debounce } from 'underscore'; // slightly smaller build size than lodash
+import { debounce } from 'lodash';
 import VueBootstrapTypeahead from 'vue-bootstrap-typeahead/src/components/VueBootstrapTypeahead.vue';
 
 import { REGEX_MARKER, REGEX_REGION } from '../util/constants';
@@ -88,6 +88,7 @@ export default {
                 .then(resp => resp.json())
                 .then((data) => {
                     // Limit the API response to a set of valid, and useful, search results
+                    //   (omnisearch does some things we don't need)
                     this.search_results = data.data.filter(item => !item.error && (item.type !== 'region'));
                 });
         },

@@ -16,8 +16,8 @@
     "bootstrap-vue": "^2.0.0-rc.11",
     "gwas-credible-sets": "^0.1.0",
     "locuszoom": "~0.9.0",
+    "lodash": "^4.17.11",
     "tabulator-tables": "^4.1.4",
-    "underscore": "^1.9.1",
     "vue": "^2.5.17",
     "vue-bootstrap-typeahead": "^0.2.6"
   },

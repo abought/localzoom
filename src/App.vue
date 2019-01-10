@@ -14,21 +14,26 @@ import LzAssocPlot from './components/LzAssocPlot.vue';
 
 export default {
     name: 'LocalZoom',
+    beforeCreate() {
+        // Preserve a reference to component widgets so that their methods can be accessed directly
+        //  Some- esp LZ plots- behave very oddly when wrapped as a nested observable; we can
+        //  bypass these problems by assigning them as static properties instead of nested
+        //  observables.
+        this.assoc_plot = null;
+        this.phewas_plot = null;
+        this.export_table = null;
+    },
     data() {
         return {
             // Placeholder values passed from toolbar to assoc plot
             tmp_options_plot: null,
             tmp_options_source: null,
-            tmp_plot_state: null,
-
-            // Placeholder values for advanced manipulation of wrapped widgets
-            assoc_plot: null,
-            phewas_plot: null,
-            export_table: null,
+            region: null,
 
             // State to be tracked across all components
             study_names: [],
             plot_region: {}, // Keys chrom, start, end (used in plot.state and elsewhere)
+
         };
     },
     computed: {
@@ -112,7 +117,7 @@ export default {
       <div class="col-md-12">
         <gwas-toolbar
             @config-ready="hasPlotOptions"
-            @select-range="tmp_plot_state = $event"
+            @select-range="region = $event"
         />
       </div>
     </div>
@@ -127,11 +132,14 @@ export default {
       </div>
       <div class="col-md-9">
         <keep-alive>
+        <!-- TODO: Track event without triggering a circular state update / watcher -->
+        <!--@state_changed="Object.assign(region, $event.data)"-->
         <lz-assoc-plot
-                :source_options="tmp_options_source"
-                :plot_options="tmp_options_plot"
-                :plot_state="tmp_plot_state"
-                @connected="assoc_plot = $event" />
+            :source_options="tmp_options_source"
+            :plot_options="tmp_options_plot"
+            :region="region"
+            @region_changed="plot_region = $event"
+            @connected="assoc_plot = $event" />
         </keep-alive>
       </div>
     </div>

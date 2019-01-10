@@ -13,50 +13,50 @@ export default {
     data() {
         return {
             // Whether to show the "add a gwas" UI
-            showModal: false,
+            show_modal: false,
             // Limit how many studies can be added (due to browser performance)
-            studyCount: 0,
+            study_count: 0,
 
             // Control display of success/failure messages from this or child components
             message: '',
-            messageClass: '',
+            message_class: '',
 
             // Temporary internal state
-            fileReader: null,
-            displayName: null,
+            file_reader: null,
+            display_name: null, // TODO: replace 2 way binding with bubbling name up separately
 
             // Allow the user to customize the plot and select featured annotations
-            hasCatalog: false,
-            hasCredibleSets: false,
+            has_catalog: false,
+            has_credible_sets: false,
             build: 'GRCh37',
         };
     },
     methods: {
         reset() {
             // Reset state in the component
-            this.fileReader = null;
-            this.displayName = null;
+            this.file_reader = null;
+            this.display_name = null;
             this.showMessage('', '');
         },
         showMessage(message, style = 'text-danger') {
             this.message = message;
-            this.messageClass = style;
+            this.message_class = style;
         },
         selectRange(config) {
             this.showMessage('', '');
             this.$emit('select-range', config);
         },
         connectReader(reader, name) {
-            this.fileReader = reader;
-            this.displayName = name;
-            this.showModal = true;
+            this.file_reader = reader;
+            this.display_name = name;
+            this.show_modal = true;
         },
         sendConfig(parser_options, state) {
             // This particular app captures reader options for display, then relays them to the plot
-            this.studyCount += 1;
+            this.study_count += 1;
             const annotations = {
-                gwas_catalog: this.hasCatalog,
-                credible_sets: this.hasCredibleSets,
+                gwas_catalog: this.has_catalog,
+                credible_sets: this.has_credible_sets,
             };
             const { build } = this;
             // Event signature:
@@ -64,7 +64,7 @@ export default {
             //  plot_options={annotations, state}
             this.$emit(
                 'config-ready',
-                { label: this.displayName, reader: this.fileReader, parser_config: parser_options },
+                { label: this.display_name, reader: this.file_reader, parser_config: parser_options },
                 {
                     annotations,
                     build,
@@ -89,7 +89,7 @@ export default {
   <div>
     <div class="row">
       <div class="col-sm-6">
-        <div v-if="studyCount < max_studies">
+        <div v-if="study_count < max_studies">
           <tabix-file class="mr-1"
                       @ready="connectReader" @fail="showMessage" />
           <bs-dropdown text="Add from URL" variant="success">
@@ -97,15 +97,15 @@ export default {
               <tabix-url @ready="connectReader" @fail="showMessage" />
             </div>
           </bs-dropdown>
-          <adder-wizard v-if="showModal"
-                        :file_reader="fileReader"
-                        :file_name.sync="displayName"
+          <adder-wizard v-if="show_modal"
+                        :file_reader="file_reader"
+                        :file_name.sync="display_name"
                         @ready="sendConfig"
-                        @close="showModal = false" />
+                        @close="show_modal = false" />
         </div>
       </div>
       <div class="col-sm-6">
-        <region-picker v-if="studyCount"
+        <region-picker v-if="study_count"
                        @ready="selectRange"
                        @fail="showMessage" class="float-right"
                        :build="build"
@@ -117,12 +117,12 @@ export default {
             <strong>Annotations</strong><br>
             <div class="form-check form-check-inline">
               <input class="form-check-input" type="checkbox" id="show-catalog"
-                     v-model="hasCatalog">
+                     v-model="has_catalog">
               <label class="form-check-label" for="show-catalog">GWAS Catalog</label>
             </div>
             <div class="form-check form-check-inline">
               <input class="form-check-input" type="checkbox" id="show-credible-set"
-                     v-model="hasCredibleSets">
+                     v-model="has_credible_sets">
               <label class="form-check-label" for="show-credible-set">95% credible set</label>
             </div>
             <strong>Genome Build</strong><br>
@@ -141,7 +141,7 @@ export default {
       </div>
     </div>
     <div class="row" v-if="message">
-      <div class="col-sm-12"><span :class="[messageClass]">{{message}}</span></div>
+      <div class="col-sm-12"><span :class="[message_class]">{{message}}</span></div>
     </div>
   </div>
 </template>
