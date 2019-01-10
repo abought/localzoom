@@ -5,6 +5,7 @@ import bsNav from 'bootstrap-vue/es/components/nav/nav';
 import bsNavItem from 'bootstrap-vue/es/components/nav/nav-item';
 import bsTab from 'bootstrap-vue/es/components/tabs/tab';
 import bsTabs from 'bootstrap-vue/es/components/tabs/tabs';
+import bsToggle from 'bootstrap-vue/es/directives/toggle/toggle';
 
 import GwasToolbar from './components/GwasToolbar.vue';
 import LzAssocPlot from './components/LzAssocPlot.vue';
@@ -34,13 +35,9 @@ export default {
             study_names: [],
         };
     },
-    computed: {
-        study_count() {
-            return this.study_names.length;
-        },
-    },
     methods: {
         getPlotOptions(source_options, plot_options) {
+            this.study_names.push(source_options.label);
             this.tmp_options_plot = plot_options;
             this.tmp_options_source = source_options;
         },
@@ -55,6 +52,7 @@ export default {
         bsTab,
         bsTabs,
     },
+    directives: { 'b-toggle': bsToggle },
 };
 </script>
 

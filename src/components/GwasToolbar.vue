@@ -9,13 +9,17 @@ import TabixUrl from './TabixUrl.vue';
 
 export default {
     name: 'gwas-toolbar',
-    props: { max_studies: { type: Number, default: 3 } },
+    props: {
+        // Limit how many studies can be added (due to browser performance)
+        max_studies: { type: Number, default: 3 },
+        // Toolbar can optionally consider a list of studies already on plot
+        study_names: { type: [Array, null], default: null },
+    },
     data() {
         return {
             // Whether to show the "add a gwas" UI
             show_modal: false,
-            // Limit how many studies can be added (due to browser performance)
-            study_count: 0,
+            num_studies_added: 0,
 
             // Control display of success/failure messages from this or child components
             message: '',
@@ -30,6 +34,11 @@ export default {
             has_credible_sets: false,
             build: 'GRCh37',
         };
+    },
+    computed: {
+        study_count() {
+            return this.study_names ? this.study_names.length : this.num_studies_added;
+        },
     },
     methods: {
         reset() {
@@ -53,7 +62,7 @@ export default {
         },
         sendConfig(parser_options, state) {
             // This particular app captures reader options for display, then relays them to the plot
-            this.study_count += 1;
+            this.num_studies_added += 1;
             const annotations = {
                 gwas_catalog: this.has_catalog,
                 credible_sets: this.has_credible_sets,
@@ -63,8 +72,12 @@ export default {
             //  source_options={label, reader, parser_config},
             //  plot_options={annotations, state}
             this.$emit(
-                'config-ready',
-                { label: this.display_name, reader: this.file_reader, parser_config: parser_options },
+                'config-ready', // TODO: Structure this into a defined type
+                {
+                    label: this.display_name,
+                    reader: this.file_reader,
+                    parser_config: parser_options,
+                },
                 {
                     annotations,
                     build,
@@ -109,7 +122,7 @@ export default {
                        @ready="selectRange"
                        @fail="showMessage" class="float-right"
                        :build="build"
-                       max_range="500000"
+                       :max_range="500000"
                        search_url="https://portaldev.sph.umich.edu/api_internal_dev/v1/annotation/omnisearch/" />
         <bs-dropdown v-else text="Plot options" variant="info"
                      class="float-right">

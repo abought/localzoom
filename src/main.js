@@ -14,15 +14,16 @@ Vue.config.productionTip = false;
 // const CREDSET_OPTION_SELECTOR = $('#credible-set-datasets');
 // const CREDSET_BUTTON_SELECTOR = $('#credible-set-download');
 
-const app = new Vue({ render: h => h(App) })
-    .$mount('#localzoom-ui');
+new Vue({ render: h => h(App) })
+    .$mount('#app');
 //
 // // LocusZoom exists outside the Vue instance, and responds to controls via event listeners
 // //  References to the plot and data_sources objects will be deliberately attached to root to
 // //  facilitate debugging
 // app.$on('config-ready', (source_options, plot_options) => {
 //     if (plot_options.annotations.credible_sets) {
-//         $(`<option value="${source_options.label}">${source_options.label}</option>`).appendTo(CREDSET_OPTION_SELECTOR);
+//         $(`<option value="${source_options.label}">${source_options.label}</option>`).appendTo(
+//         CREDSET_OPTION_SELECTOR);
 //     }
 // });
 //
@@ -59,7 +60,8 @@ const app = new Vue({ render: h => h(App) })
 //         const credible = data.filter(item => item[`credset_${source_name}:is_member`]);
 //         CREDSET_TABLE_SELECTOR.tabulator('setData', credible);
 //     });
-//     // In this use case, the plot already has data; make sure it feeds data to the table immediately
+//     // In this use case, the plot already has data; make sure it feeds data to the table
+//      // immediately
 //     window.plot.emit('data_rendered');
 // });
 //

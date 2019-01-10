@@ -45,28 +45,22 @@ export default {
          */
         connectListeners(plot) {
             Object.keys(plot.event_hooks)
-                .forEach((name) => {
-                    if (name === 'state_changed') {
-                        // Plot.state often tracks a lot of internals that we don't want to expose
-                        // to the outside world. Instead, mask this single event with one that
-                        // just exposes position/ region changes.
-                        plot.on('state_changed', (data) => {
-                            const state = data.data;
-                            const position = Object.keys(state).reduce((acc, key) => {
-                                if (['chr', 'start', 'end'].includes(key)) {
-                                    acc[key] = state[key];
-                                }
-                                return acc;
-                            }, {});
-                            if (Object.keys(position).length) {
-                                this.$emit('region_changed', position);
-                            }
-                        });
-                    } else {
-                        // All other events are emitted outside the component exactly as given
-                        plot.on(name, data => this.$emit(name, data));
-                    }
-                });
+                .forEach(name => plot.on(name, event => this.$emit(name, event)));
+
+            // Also create a synthetic event not part of LZ, that makes it a little nicer to work
+            //  with region data. (by returning what was actually displayed, not what was requested)
+            plot.on('state_changed', (event) => {
+                // An interesting quirk of region changing in LZ: event data provides
+                //  the state requested (input), not final start/end (output)
+                // The event we echo should use final plot.state as source of truth
+                const { chr, start, end } = plot.state;
+                const position_changed = Object.keys(event.data)
+                    .some(key => ['chr', 'start', 'end'].includes(key));
+
+                if (position_changed) {
+                    this.$emit('region_changed', { chr, start, end });
+                }
+            });
         },
     },
     watch: {
@@ -86,7 +80,9 @@ export default {
         },
         region: {
             handler() {
-                // To avoid update cycles, we only apply new region information if it has changed
+                // FIXME: this component receives notifications of a value it changes, a design
+                //   quirk that risks infinite update loops
+                // Only apply new region information if it has changed
                 const diffs = Object.keys(this.region).reduce((acc, key) => {
                     const new_val = this.region[key];
                     if (new_val !== this.plot.state[key]) {

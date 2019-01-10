@@ -4,9 +4,6 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <link rel="stylesheet" href="dist/css/app.css">
-  <link rel="stylesheet" href="dist/css/chunk-vendors.css">
-
   <!-- Necessary includes for LocusZoom.js -->
   <!-- TODO: Resolve issues with imports, and improve support for LZ as module -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/locuszoom@0.9.0/dist/locuszoom.css" type="text/css"/>
@@ -15,7 +12,7 @@
 
   <!-- Extensions for credible sets -->
   <script type="application/javascript" src="https://unpkg.com/gwas-credible-sets@0.1.0/dist/gwas-credible-sets.min.js" integrity="sha384-lJL/xQT18Xu6GVovitlKgX4kL8hw6YfgLGVM5PWcFUMe+tfvznEwsJlauLzB1AnQ" crossorigin="anonymous"></script>
-  <script src="external/ext/lz-credible-sets.min.js" type="application/javascript"></script>
+  <script src="https://cdn.jsdelivr.net/npm/locuszoom@0.9.0/dist/ext/lz-credible-sets.min.js" type="application/javascript"></script>
 
   <!-- FIXME: Vue build fails when `import`ing a UMD bundle; include file separately for now -->
   <script src="external/dalliance-tabix-reader.js" type="application/javascript"></script>
@@ -38,7 +35,7 @@
 
 <body>
 <div class="container">
-  <div id="localzoom-ui"></div>
+  <div id="app"></div>
 
   <div id="credible-set-ui"  class="d-none row">
     <div class="col-md-12">
@@ -61,16 +58,14 @@
 
 <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
 
-<!-- For app -->
-<script src="dist/js/chunk-vendors.js"></script>
-<script src="dist/js/app.js"></script>
+<!-- built files will be auto injected -->
 
-<script type="application/javascript">
-  $('#instructions-header').click(function() {
-      $(this).toggleClass('collapse-open').toggleClass('collapse-closed');
-      $('#instructions-text').toggleClass('d-none');
-  });
-</script>
+<!--<script type="application/javascript">-->
+  <!--$('#instructions-header').click(function() {-->
+      <!--$(this).toggleClass('collapse-open').toggleClass('collapse-closed');-->
+      <!--$('#instructions-text').toggleClass('d-none');-->
+  <!--});-->
+<!--</script>-->
 
 </body>
 </html>

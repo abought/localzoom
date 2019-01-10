@@ -4,7 +4,7 @@
         :data="search_results"
         v-model="region"
         :serializer="s => s.term"
-        min-matching-chars="3"
+        :min-matching-chars="3"
         placeholder="chr:start-end"/>
     <button @click="selectRegion" class="btn btn-primary">Go to region</button>
   </div>
