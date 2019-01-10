@@ -1,7 +1,7 @@
 <script>
 import bsCard from 'bootstrap-vue/es/components/card/card';
 import bsCollapse from 'bootstrap-vue/es/components/collapse/collapse';
-import bsNav from 'bootstrap-vue/es/components/nav/nav'
+import bsNav from 'bootstrap-vue/es/components/nav/nav';
 import bsNavItem from 'bootstrap-vue/es/components/nav/nav-item';
 import bsTab from 'bootstrap-vue/es/components/tabs/tab';
 import bsTabs from 'bootstrap-vue/es/components/tabs/tabs';
@@ -28,12 +28,10 @@ export default {
             // Placeholder values passed from toolbar to assoc plot
             tmp_options_plot: null,
             tmp_options_source: null,
-            region: null,
+            assoc_region: {}, // Keys chrom, start, end (used in plot.state and elsewhere)
 
             // State to be tracked across all components
             study_names: [],
-            plot_region: {}, // Keys chrom, start, end (used in plot.state and elsewhere)
-
         };
     },
     computed: {
@@ -42,7 +40,7 @@ export default {
         },
     },
     methods: {
-        hasPlotOptions(source_options, plot_options) {
+        getPlotOptions(source_options, plot_options) {
             this.tmp_options_plot = plot_options;
             this.tmp_options_source = source_options;
         },
@@ -116,8 +114,8 @@ export default {
     <div class="row">
       <div class="col-md-12">
         <gwas-toolbar
-            @config-ready="hasPlotOptions"
-            @select-range="region = $event"
+            @config-ready="getPlotOptions"
+            @select-range="assoc_region = $event"
         />
       </div>
     </div>
@@ -132,14 +130,19 @@ export default {
       </div>
       <div class="col-md-9">
         <keep-alive>
-        <!-- TODO: Track event without triggering a circular state update / watcher -->
-        <!--@state_changed="Object.assign(region, $event.data)"-->
+
         <lz-assoc-plot
             :source_options="tmp_options_source"
             :plot_options="tmp_options_plot"
-            :region="region"
-            @region_changed="plot_region = $event"
-            @connected="assoc_plot = $event" />
+            :region="assoc_region"
+            @region_changed="assoc_region = $event"
+            @connected="assoc_plot = $event">
+          <div class="placeholder-plot" style="display:table;">
+            <span class="text-center" style="display: table-cell; vertical-align:middle">
+              Please add a GWAS track to continue
+            </span>
+          </div>
+        </lz-assoc-plot>
         </keep-alive>
       </div>
     </div>
@@ -147,7 +150,7 @@ export default {
     <div class="row">
       <div class="col-md-12">
         <footer style="text-align: center;">
-          &copy; Copyright 2018 <a href="https://github.com/statgen">The University of Michigan Center
+          &copy; Copyright 2019 <a href="https://github.com/statgen">The University of Michigan Center
           for Statistical
           Genetics</a><br>
         </footer>
