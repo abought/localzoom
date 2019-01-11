@@ -1,27 +1,24 @@
 <script>
 import Tabulator from 'tabulator-tables';
+import 'tabulator-tables/dist/css/tabulator.min.css'; // TODO: is this necessary?
 
 export default {
     name: 'TabulatorTable',
-    props: { data: Object, columns: Array, initialSort: Object },
-    data() {
-        return { tabulator: null };
+    props: { data: Object, columns: Array, initialSort: Object }, // Option names per tabulator docs
+    beforeCreate() {
+        // DOM-manipulating widgets should store reference statically, not dynamically
+        this.tabulator = null;
     },
     watch: {
-        tableData: {
+        data: {
             handler(value) {
-                this.tabulator.replaceData(value);
+                this.tabulator.setData(value);
             },
             deep: true,
         },
-        columns: {
+        columns: { // Redefine the table
             handler(value) {
                 this.tabulator.setColumns(value);
-            },
-            deep: true,
-        },
-        initialSort: {
-            handler(value) {
                 this.tabulator.setSort(value);
             },
             deep: true,
@@ -40,8 +37,7 @@ export default {
 </script>
 
 <template>
-<div ref="table"></div>
+  <div>
+    <div ref="table"><slot></slot></div>
+  </div>
 </template>
-
-<style scoped>
-</style>

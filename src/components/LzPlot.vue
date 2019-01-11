@@ -1,15 +1,20 @@
 <script>
-/**
- * A LocusZoom Plot
- * TODO: Generalize to any plot (with mechanisms to push configuration)
- */
-import { createPlot, addPanels } from '../util/lz-helpers';
+/** A generic Vue component to wrap basic LZ components */
+
+// FIXME: Long term dependencies should all move to modules
+/* global LocusZoom */
 
 let uid = 0; // Ensure that every component instance has a unique DOM id, for use by d3
-
 export default {
     name: 'LzPlot',
-    props: ['source_options', 'plot_options', 'region'],
+    props: {
+        base_layout: { type: Object },
+        base_sources: { type: Array },
+        pos_chr: { type: String },
+        pos_start: { type: Number },
+        pos_end: { type: Number },
+        show_loading: { type: Boolean, default: false },
+    },
     beforeCreate() {
         uid += 1;
         this.dom_id = `lz-plot-${uid}`; // DOM element
@@ -20,23 +25,45 @@ export default {
         this.plot = null;
         this.data_sources = null;
     },
+    mounted() {
+        this.createLZ(this.base_layout, this.base_sources);
+    },
     beforeDestroy() {
         delete window[this.plot_id];
     },
+    computed: {
+        region() { // Hack: make sure that all 3 region properties get updated atomically
+            const { pos_chr: chr, pos_start: start, pos_end: end } = this;
+            return { chr, start, end };
+        },
+    },
     methods: {
-        createLZ(source_options, plot_options) {
-            const [plot, data_sources] = createPlot(`#${this.dom_id}`, source_options, plot_options);
-            this.connectListeners(plot);
+        /**
+         * Create an LZ plot
+         * @param {object} base_layout
+         * @param {Array[]} base_sources
+         */
+        createLZ(base_layout, base_sources) {
+            // Create and populate the plot
+            const data_sources = new LocusZoom.DataSources();
+            base_sources.forEach(([name, config]) => data_sources.add(name, config));
+            const plot = LocusZoom.populate(`#${this.dom_id}`, data_sources, base_layout);
+
+            if (this.show_loading) {
+                // Add loading indicator to every panel if appropriate
+                plot.layout.panels.forEach(panel => plot.panels[panel.id].addBasicLoader());
+            }
+
+            // Save references to the plot for manipulation later
             this.plot = plot;
             this.data_sources = data_sources;
-            // Expose a global reference to the plot, to facilitate debugging. (TODO: revisit)
-            window[this.plot_id] = plot;
+            window[this.plot_id] = plot; // TODO: This fits existing usage patterns, but it's icky
+
+            // Expose events to things outside this component
             // IMPORTANT: never consume this value in a way that would wrap it as an observable
             //   (eg by assigning it to a field in `data`).
-            this.$emit('connected', plot);
-        },
-        updateLZ(source_options, plot_options) {
-            addPanels(this.plot, this.data_sources, source_options, plot_options);
+            this.connectListeners(plot);
+            this.$emit('connected', plot, data_sources);
         },
         /**
          * The component should re-emit (most) plot-level event hooks built in to LocusZoom
@@ -64,20 +91,6 @@ export default {
         },
     },
     watch: {
-        source_options: {
-            handler() {
-                const { plot_options } = this;
-                const source_options = Object.assign({}, this.source_options);
-                source_options.parser_config = Object.assign({}, source_options.parser_config);
-
-                if (!this.plot) {
-                    this.createLZ(source_options, plot_options);
-                } else {
-                    this.updateLZ(source_options, plot_options);
-                }
-            },
-            deep: true,
-        },
         region: {
             handler() {
                 // FIXME: this component receives notifications of a value it changes, a design
@@ -106,6 +119,3 @@ export default {
         <div :id="dom_id" class="lz-container-responsive"><slot></slot></div>
     </div>
 </template>
-
-<style>
-</style>

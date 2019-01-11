@@ -7,11 +7,14 @@ import bsTab from 'bootstrap-vue/es/components/tabs/tab';
 import bsTabs from 'bootstrap-vue/es/components/tabs/tabs';
 import bsToggle from 'bootstrap-vue/es/directives/toggle/toggle';
 
-import GwasToolbar from './components/GwasToolbar.vue';
-import LzAssocPlot from './components/LzAssocPlot.vue';
+import {
+    getBasicSources, getBasicLayout, createStudyTabixSources, createStudyLayout,
+    // sourceName,
+    addPanels,
+} from '@/util/lz-helpers';
 
-// TODO: Add component options for PheWAS plots
-
+import GwasToolbar from '@/components/GwasToolbar.vue';
+import LzPlot from '@/components/LzPlot.vue';
 
 export default {
     name: 'LocalZoom',
@@ -21,29 +24,58 @@ export default {
         //  bypass these problems by assigning them as static properties instead of nested
         //  observables.
         this.assoc_plot = null;
+        this.assoc_sources = null;
+
         this.phewas_plot = null;
         this.export_table = null;
     },
     data() {
         return {
-            // Placeholder values passed from toolbar to assoc plot
-            tmp_options_plot: null,
-            tmp_options_source: null,
-            assoc_region: {}, // Keys chrom, start, end (used in plot.state and elsewhere)
+            // Used to trigger the initial drawing of the plot
+            base_assoc_layout: null,
+            base_assoc_sources: null,
+
+            // Currently selected values
+            pos_chr: null,
+            pos_start: null,
+            pos_end: null,
+
 
             // State to be tracked across all components
             study_names: [],
         };
     },
     methods: {
-        getPlotOptions(source_options, plot_options) {
-            this.study_names.push(source_options.label);
-            this.tmp_options_plot = plot_options;
-            this.tmp_options_source = source_options;
+        receiveAssocOptions(source_options, plot_options) {
+            const { label, reader, parser_config } = source_options;
+            const sources = createStudyTabixSources(label, reader, parser_config);
+            const { annotations, build, state } = plot_options;
+            const panels = createStudyLayout(label, annotations, build);
+
+
+            console.log(state);
+            this.updateRegion(state);
+
+            if (!this.assoc_plot) {
+                this.base_assoc_sources = getBasicSources(sources);
+                this.base_assoc_layout = getBasicLayout(state, panels);
+            } else {
+                addPanels(this.assoc_plot, this.assoc_sources, panels);
+            }
+            this.study_names.push(label);
+        },
+        receivePlot(plot, data_sources) {
+            this.assoc_plot = plot;
+            this.assoc_sources = data_sources;
+        },
+        updateRegion(region) {
+            this.pos_chr = region.chr;
+            this.pos_start = region.start;
+            this.pos_end = region.end;
         },
     },
     components: {
-        LzAssocPlot,
+        LzPlot,
         GwasToolbar,
         bsCollapse,
         bsCard,
@@ -112,8 +144,8 @@ export default {
     <div class="row">
       <div class="col-md-12">
         <gwas-toolbar
-            @config-ready="getPlotOptions"
-            @select-range="assoc_region = $event"
+            @config-ready="receiveAssocOptions"
+            @select-range="updateRegion"
         />
       </div>
     </div>
@@ -128,19 +160,21 @@ export default {
       </div>
       <div class="col-md-9">
         <keep-alive>
+        <lz-plot v-if="study_names.length"
+            :show_loading="true"
+            :base_layout="base_assoc_layout"
+            :base_sources="base_assoc_sources"
+            :pos_chr="pos_chr"
+            :pos_start="pos_start"
+            :pos_end="pos_end"
 
-        <lz-assoc-plot
-            :source_options="tmp_options_source"
-            :plot_options="tmp_options_plot"
-            :region="assoc_region"
-            @region_changed="assoc_region = $event"
-            @connected="assoc_plot = $event">
-          <div class="placeholder-plot" style="display:table;">
+            @region_changed="updateRegion"
+            @connected="receivePlot" />
+          <div v-else class="placeholder-plot" style="display:table;">
             <span class="text-center" style="display: table-cell; vertical-align:middle">
               Please add a GWAS track to continue
             </span>
           </div>
-        </lz-assoc-plot>
         </keep-alive>
       </div>
     </div>
