@@ -15,6 +15,7 @@ import {
 import ExportData from '@/components/ExportData.vue';
 import GwasToolbar from '@/components/GwasToolbar.vue';
 import LzPlot from '@/components/LzPlot.vue';
+import PhewasMaker from '@/components/PhewasMaker.vue';
 
 export default {
     name: 'LocalZoom',
@@ -42,7 +43,13 @@ export default {
 
 
             // State to be tracked across all components
+            build: null,
             study_names: [],
+
+            // For the "phewas plot" label:
+            tmp_phewas_study: null,
+            tmp_phewas_variant: null,
+            tmp_phewas_logpvalue: null,
 
             // Required for export widget
             tmp_export_callback: null,
@@ -53,6 +60,10 @@ export default {
     computed: {
         has_studies() {
             return !!this.study_names.length;
+        },
+        allow_phewas() {
+            // Our current phewas api only has build 37 datasets; disable option for build 38
+            return this.build === 'GRCh37';
         },
     },
     methods: {
@@ -76,6 +87,7 @@ export default {
                 addPanels(this.assoc_plot, this.assoc_sources, panels, sources);
             }
             this.study_names.push(label);
+            this.build = build;
         },
         receivePlot(plot, data_sources) {
             this.assoc_plot = plot;
@@ -97,14 +109,28 @@ export default {
                 return;
             }
             this.tmp_export_callback = this.assoc_plot.subscribeToData(fields, (data) => {
-                this.table_data = data.map(deNamespace);
+                this.table_data = data.map(item => deNamespace(item, 'assoc'));
             });
             // In this use case, the plot already has data; make sure it feeds data to the table
             // immediately
             this.assoc_plot.emit('data_rendered');
         },
+        onVariantClick(lzEvent) {
+            // Respond to clicking on an association plot datapoint
+            const panel_name = lzEvent.sourceID;
+            if (panel_name.indexOf('association_') === -1) {
+                return;
+            }
+
+            // TODO: Clean this up a bit to better match original display name
+            const variant_data = deNamespace(lzEvent.data, 'assoc');
+            this.tmp_phewas_study = panel_name.replace(/^assoc_/, '');// FIXME: remove leading lzplot prefix
+            this.tmp_phewas_variant = variant_data.variant;
+            this.tmp_phewas_logpvalue = variant_data.log_pvalue;
+        },
     },
     components: {
+        PhewasMaker,
         ExportData,
         GwasToolbar,
         LzPlot,
@@ -184,26 +210,28 @@ export default {
     <bs-card no-body>
       <bs-tabs pills card vertical>
         <bs-tab title="GWAS">
-          <keep-alive>
           <lz-plot v-if="has_studies"
-              :show_loading="true"
-              :base_layout="base_assoc_layout"
-              :base_sources="base_assoc_sources"
-              :pos_chr="pos_chr"
-              :pos_start="pos_start"
-              :pos_end="pos_end"
-
-              @region_changed="updateRegion"
-              @connected="receivePlot" />
+                   :show_loading="true"
+                   :base_layout="base_assoc_layout"
+                   :base_sources="base_assoc_sources"
+                   :pos_chr="pos_chr"
+                   :pos_start="pos_start"
+                   :pos_end="pos_end"
+                   @region_changed="updateRegion"
+                   @element_clicked="onVariantClick"
+                   @connected="receivePlot" />
             <div v-else class="placeholder-plot" style="display:table;">
               <span class="text-center" style="display: table-cell; vertical-align:middle">
                 Please add a GWAS track to continue
               </span>
             </div>
-          </keep-alive>
         </bs-tab>
-        <!-- TODO: Write a phewas component with appropriate config -->
-        <bs-tab title="PheWAS" :disabled="!has_studies">A phewas plot should appear here</bs-tab>
+        <bs-tab title="PheWAS" :disabled="!has_studies || !allow_phewas">
+          <phewas-maker :variant_name="tmp_phewas_variant" :build="build"
+                        :your_study="tmp_phewas_study"
+                        :your_logpvalue="tmp_phewas_logpvalue" />
+
+        </bs-tab>
         <bs-tab title="Export" :disabled="!has_studies">
           <export-data :has_credible_sets="has_credible_sets"
                        :study_names="study_names"

@@ -179,11 +179,16 @@ function getBasicLayout(initial_state = {}, study_panels = []) {
  * As with all convenience methods, it has limits: don't use it if the same field name is requested
  *   from two different sources!
  * @param {Object} data An object representing the fields for one row of data
+ * @param {String} [prefer] Sometimes, two sources provide a field with same name. Specify which
+ *  source will take precedence in the event of a conflict.
  */
-function deNamespace(data) {
+function deNamespace(data, prefer) {
     return Object.keys(data).reduce((acc, key) => {
         const new_key = key.replace(/.*?:/, '');
-        acc[new_key] = data[key];
+        if (!Object.prototype.hasOwnProperty.call(acc, new_key) ||
+            (!prefer || key.startsWith(prefer))) {
+            acc[new_key] = data[key];
+        }
         return acc;
     }, {});
 }
