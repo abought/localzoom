@@ -9,10 +9,10 @@ import bsToggle from 'bootstrap-vue/es/directives/toggle/toggle';
 
 import {
     getBasicSources, getBasicLayout, createStudyTabixSources, createStudyLayout,
-    // sourceName,
-    addPanels,
+    addPanels, deNamespace,
 } from '@/util/lz-helpers';
 
+import ExportData from '@/components/ExportData.vue';
 import GwasToolbar from '@/components/GwasToolbar.vue';
 import LzPlot from '@/components/LzPlot.vue';
 
@@ -35,7 +35,7 @@ export default {
             base_assoc_layout: null,
             base_assoc_sources: null,
 
-            // Currently selected values
+            // Current position/ shared state
             pos_chr: null,
             pos_start: null,
             pos_end: null,
@@ -43,7 +43,17 @@ export default {
 
             // State to be tracked across all components
             study_names: [],
+
+            // Required for export widget
+            tmp_export_callback: null,
+            has_credible_sets: false,
+            table_data: [],
         };
+    },
+    computed: {
+        has_studies() {
+            return !!this.study_names.length;
+        },
     },
     methods: {
         receiveAssocOptions(source_options, plot_options) {
@@ -52,8 +62,11 @@ export default {
             const { annotations, build, state } = plot_options;
             const panels = createStudyLayout(label, annotations, build);
 
+            if (annotations.credible_sets) {
+                // Track plot options for export feature
+                this.has_credible_sets = true;
+            }
 
-            console.log(state);
             this.updateRegion(state);
 
             if (!this.assoc_plot) {
@@ -73,10 +86,27 @@ export default {
             this.pos_start = region.start;
             this.pos_end = region.end;
         },
+        subscribeFields(fields) {
+            // This method controls one table widget that draws from plot data, and that widget
+            //  listens to only one set of fields at a time.
+            if (this.tmp_export_callback) {
+                this.assoc_plot.off('data_rendered', this.tmp_export_callback);
+            }
+            if (!fields.length || !this.assoc_plot) {
+                return;
+            }
+            this.tmp_export_callback = this.assoc_plot.subscribeToData(fields, (data) => {
+                this.table_data = data.map(deNamespace);
+            });
+            // In this use case, the plot already has data; make sure it feeds data to the table
+            // immediately
+            this.assoc_plot.emit('data_rendered');
+        },
     },
     components: {
-        LzPlot,
+        ExportData,
         GwasToolbar,
+        LzPlot,
         bsCollapse,
         bsCard,
         bsNav,
@@ -150,34 +180,38 @@ export default {
       </div>
     </div>
 
-    <div class="row">
-      <div class="col-md-2">
-        <bs-nav vertical tabs>
-          <bs-nav-item active>GWAS</bs-nav-item>
-          <bs-nav-item>PheWAS</bs-nav-item>
-          <bs-nav-item>Export</bs-nav-item>
-        </bs-nav>
-      </div>
-      <div class="col-md-9">
-        <keep-alive>
-        <lz-plot v-if="study_names.length"
-            :show_loading="true"
-            :base_layout="base_assoc_layout"
-            :base_sources="base_assoc_sources"
-            :pos_chr="pos_chr"
-            :pos_start="pos_start"
-            :pos_end="pos_end"
+    <bs-card no-body>
+      <bs-tabs pills card vertical>
+        <bs-tab title="GWAS">
+          <keep-alive>
+          <lz-plot v-if="has_studies"
+              :show_loading="true"
+              :base_layout="base_assoc_layout"
+              :base_sources="base_assoc_sources"
+              :pos_chr="pos_chr"
+              :pos_start="pos_start"
+              :pos_end="pos_end"
 
-            @region_changed="updateRegion"
-            @connected="receivePlot" />
-          <div v-else class="placeholder-plot" style="display:table;">
-            <span class="text-center" style="display: table-cell; vertical-align:middle">
-              Please add a GWAS track to continue
-            </span>
-          </div>
-        </keep-alive>
-      </div>
-    </div>
+              @region_changed="updateRegion"
+              @connected="receivePlot" />
+            <div v-else class="placeholder-plot" style="display:table;">
+              <span class="text-center" style="display: table-cell; vertical-align:middle">
+                Please add a GWAS track to continue
+              </span>
+            </div>
+          </keep-alive>
+        </bs-tab>
+        <!-- TODO: Write a phewas component with appropriate config -->
+        <bs-tab title="PheWAS" :disabled="!has_studies">A phewas plot should appear here</bs-tab>
+        <bs-tab title="Export" :disabled="!has_studies">
+          <export-data :has_credible_sets="has_credible_sets"
+                       :study_names="study_names"
+                       :table_data="table_data"
+                       @requested-data="subscribeFields"/>
+        </bs-tab>
+
+      </bs-tabs>
+    </bs-card>
 
     <div class="row">
       <div class="col-md-12">

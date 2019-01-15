@@ -170,10 +170,30 @@ function getBasicLayout(initial_state = {}, study_panels = []) {
     });
 }
 
+/**
+ * Remove the `sourcename:` prefix from field names in the data returned by an LZ datasource
+ *
+ * This is a convenience method for writing external widgets (like tables) that subscribe to the
+ *   plot; typically we don't want to have to redefine the table layout every time someone selects
+ *   a different association study.
+ * As with all convenience methods, it has limits: don't use it if the same field name is requested
+ *   from two different sources!
+ * @param {Object} data An object representing the fields for one row of data
+ */
+function deNamespace(data) {
+    return Object.keys(data).reduce((acc, key) => {
+        const new_key = key.replace(/.*?:/, '');
+        acc[new_key] = data[key];
+        return acc;
+    }, {});
+}
+
 export {
     // Basic definitions
     getBasicSources, getBasicLayout,
     createStudyTabixSources, createStudyLayout,
     // Plot manipulation
     sourceName, addPanels,
+    // General helpers
+    deNamespace,
 };

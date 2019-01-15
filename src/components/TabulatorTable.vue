@@ -1,16 +1,23 @@
 <script>
 import Tabulator from 'tabulator-tables';
-import 'tabulator-tables/dist/css/tabulator.min.css'; // TODO: is this necessary?
+import 'tabulator-tables/dist/css/tabulator.min.css';
 
 export default {
     name: 'TabulatorTable',
-    props: { data: Object, columns: Array, initialSort: Object }, // Option names per tabulator docs
+    props: {
+        table_data: Array,
+        columns: Array,
+        initialSort: Array,
+        layout: { default: 'fitColumns' },
+        layoutColumnsOnNewData: { default: true, type: Boolean },
+        height: { default: '100%' },
+    },
     beforeCreate() {
         // DOM-manipulating widgets should store reference statically, not dynamically
         this.tabulator = null;
     },
     watch: {
-        data: {
+        table_data: {
             handler(value) {
                 this.tabulator.setData(value);
             },
@@ -25,11 +32,14 @@ export default {
         },
     },
     mounted() {
-        this.tabulator = new Tabulator(this.$refs.table, {
-            data: this.data,
-            columns: this.columns,
-            initialSort: this.initialSort,
-        });
+        const {
+            table_data: data,
+            columns, initialSort, layout, layoutColumnsOnNewData, height,
+        } = this;
+        this.tabulator = new Tabulator(
+            this.$refs.table,
+            { data, columns, initialSort, layout, layoutColumnsOnNewData, height },
+        );
         // Expose a reference to the raw table object, for advanced usages such as click events
         this.$emit('connected', this.tabulator);
     },
