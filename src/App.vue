@@ -63,7 +63,7 @@ export default {
             const panels = createStudyLayout(label, annotations, build);
 
             if (annotations.credible_sets) {
-                // Track plot options for export feature
+                // Tell the "export" feature that relevant plot options were used.
                 this.has_credible_sets = true;
             }
 
@@ -73,7 +73,7 @@ export default {
                 this.base_assoc_sources = getBasicSources(sources);
                 this.base_assoc_layout = getBasicLayout(state, panels);
             } else {
-                addPanels(this.assoc_plot, this.assoc_sources, panels);
+                addPanels(this.assoc_plot, this.assoc_sources, panels, sources);
             }
             this.study_names.push(label);
         },
@@ -91,6 +91,7 @@ export default {
             //  listens to only one set of fields at a time.
             if (this.tmp_export_callback) {
                 this.assoc_plot.off('data_rendered', this.tmp_export_callback);
+                this.tmp_export_callback = null;
             }
             if (!fields.length || !this.assoc_plot) {
                 return;

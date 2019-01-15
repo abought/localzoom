@@ -90,7 +90,7 @@ export default {
   <p>
     <label>Select a study:
       <select v-model="selected_study" :disabled="study_names.length === 0">
-        <option disabled value="">(none selected)</option>
+        <option value="">(none selected)</option>
         <option v-for="(item, index) in study_names" :value="item" :key="index">{{item}}</option>
       </select>
     </label>
