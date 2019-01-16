@@ -8,7 +8,7 @@ export default {
         table_data: Array,
         columns: Array,
         initialSort: Array,
-        layout: { default: 'fitColumns' },
+        layout: { default: 'fitData' },
         layoutColumnsOnNewData: { default: true, type: Boolean },
         height: { default: '100%' },
     },

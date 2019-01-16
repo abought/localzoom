@@ -82,7 +82,11 @@ export default {
 
             if (!this.assoc_plot) {
                 this.base_assoc_sources = getBasicSources(sources);
-                this.base_assoc_layout = getBasicLayout(state, panels);
+
+                // Prevent weird resize behavior when switching tabs
+                const base_assoc_layout = getBasicLayout(state, panels);
+                base_assoc_layout.responsize_resize = false;
+                this.base_assoc_layout = base_assoc_layout;
             } else {
                 addPanels(this.assoc_plot, this.assoc_sources, panels, sources);
             }
@@ -208,7 +212,7 @@ export default {
     </div>
 
     <bs-card no-body>
-      <bs-tabs pills card vertical>
+      <bs-tabs pills card vertical style="min-height:750px;">
         <bs-tab title="GWAS">
           <lz-plot v-if="has_studies"
                    :show_loading="true"
@@ -226,11 +230,13 @@ export default {
               </span>
             </div>
         </bs-tab>
-        <bs-tab title="PheWAS" :disabled="!has_studies || !allow_phewas">
+        <bs-tab :disabled="!has_studies || !allow_phewas">
+          <template slot="title">
+            <span title="Only available for build GRCh37 datasets">PheWAS</span>
+          </template>
           <phewas-maker :variant_name="tmp_phewas_variant" :build="build"
                         :your_study="tmp_phewas_study"
                         :your_logpvalue="tmp_phewas_logpvalue" />
-
         </bs-tab>
         <bs-tab title="Export" :disabled="!has_studies">
           <export-data :has_credible_sets="has_credible_sets"
@@ -256,8 +262,8 @@ export default {
 
 <style scoped>
     .placeholder-plot {
-        width: 100%;
-          height: 400px;
-          border-style: dashed;
+      width: 100%;
+      height: 500px;
+      border-style: dashed;
     }
 </style>

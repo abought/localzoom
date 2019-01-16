@@ -15,12 +15,21 @@ export default {
             return LocusZoom.TransformationFunctions.get('scinotation')(this.your_logpvalue);
         },
         base_phewas_layout() {
+            const layer = LocusZoom.Layouts.get('data_layer', 'phewas_pvalues', {
+                unnamespaced: true,
+                y_axis: { min_extent: [0, 10] },
+            });
+            const panel = LocusZoom.Layouts.get('panel', 'phewas', {
+                unnamespaced: true,
+                data_layers: [layer],
+            });
+
             return LocusZoom.Layouts.get(
                 'plot', 'standard_phewas',
                 {
                     height: 250,
                     min_height: 200,
-                    panels: [LocusZoom.Layouts.get('panel', 'phewas', { unnamespaced: true })],
+                    panels: [panel],
                     state: { variant: this.variant_name, genome_build: this.build },
                 },
             );
@@ -35,13 +44,24 @@ export default {
         receivePlot(plot, datasources) {
             this.plot = plot;
             this.datasources = datasources;
+
+            // Use listeners to warn when no variant data is available
+            plot.subscribeToData(['phewas:id'], (data) => {
+                if (!data || !data.length) {
+                    plot.curtain.show('There is no PheWAS data available for the requested variant. Please try another variant.');
+                }
+            });
+            // Since the plot already has data, ensure the event fires immediately.
+            plot.emit('data_rendered');
         },
     },
     watch: {
         variant_name() {
+            // FIXME: Set this up to only re-render when the phewas tab is actually selected. This will improve gwas plot performance and avoid some positioning/rendering issues as screen moves
             if (!this.plot) {
                 return;
             }
+            this.plot.curtain.hide();
             this.plot.applyState({ variant: this.variant_name });
         },
     },
@@ -58,8 +78,9 @@ export default {
   <div v-else>
     <h3>{{ variant_name }} in context</h3>
     <p>
-      In your study <em>{{ your_study }}, this variant has a </em> -log<sub>10</sub> p-value of:
-      <strong>{{ display_logpvalue }}</strong>.
+      In your study <em style="word-break: break-word">{{ your_study }}</em>, this variant has a
+      -log<sub>10</sub> p-value of: <strong>{{ display_logpvalue }}</strong>. Below are other
+      results for comparison.
     </p>
 
     <lz-plot
@@ -70,7 +91,7 @@ export default {
         @connected="receivePlot" />
   </div>
   <p>
-    PheWAS results are draw from a large-scale analysis of the UK Biobank dataset, as described in
+    PheWAS results are drawn from a large-scale analysis of the UK Biobank dataset, as described in
     <a href="https://doi.org/10.1038/s41588-018-0184-y">Nature Genetics volume 50, pages 1335–1341 (2018)</a>.
   </p>
 

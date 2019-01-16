@@ -87,24 +87,39 @@ export default {
 
 <template>
 <div>
-  <p>
-    <label>Select a study:
-      <select v-model="selected_study" :disabled="study_names.length === 0">
-        <option value="">(none selected)</option>
-        <option v-for="(item, index) in study_names" :value="item" :key="index">{{item}}</option>
-      </select>
-    </label>
-  </p>
+  <div class="row">
+    <div class="col-md-12">
+      <label>Select a study:
+        <select style="width: 20em;"
+            v-model="selected_study" :disabled="study_names.length === 0">
+          <option value="">(none selected)</option>
+          <option v-for="(item, index) in study_names" :value="item" :key="index">{{item}}</option>
+        </select>
+      </label>
+    </div>
+  </div>
 
   <div v-if="selected_study">
-    <button class="btn btn-primary"
-            :disabled="!selected_study" @click="exportCSV">Download</button>
-    <tabulator-table
-        :columns="table_config" :initial-sort="[{column: 'log_pvalue', dir: 'desc'}]"
-        height="300px" :table_data="table_data"
-        @connected="table = $event" />
+    <div class="row">
+      <div class="col-md-12">
+        <button class="btn btn-info float-right"
+                :disabled="!selected_study" @click="exportCSV">Download</button>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-12">
+        <tabulator-table
+            :columns="table_config" :initial-sort="[{column: 'log_pvalue', dir: 'desc'}]"
+            height="300px" :table_data="table_data"
+            @connected="table = $event" />
+      </div>
+    </div>
   </div>
   <p v-else>Please select a study to use the "export" feature.</p>
 </div>
 </template>
 
+<style scoped>
+
+</style>
