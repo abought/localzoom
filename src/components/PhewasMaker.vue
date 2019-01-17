@@ -9,7 +9,15 @@ export default {
         this.plot = null;
         this.datasources = null;
     },
-    props: ['variant_name', 'build', 'your_study', 'your_logpvalue'],
+    props: ['variant_name', 'build', 'your_study', 'your_logpvalue', 'allow_render'],
+    data() {
+        // Track whether phewas tab was rendered at least once. Don't draw this plot if no one looks
+        // METHOD: 1. if allow_render true, then make initial plot
+        // Updates are based on a synthetic property
+
+        // allow_render || rendered (for lz-plot to show)
+        return { rendered: this.allow_render };
+    },
     computed: {
         display_logpvalue() {
             return LocusZoom.TransformationFunctions.get('scinotation')(this.your_logpvalue);
@@ -30,6 +38,7 @@ export default {
                     height: 250,
                     min_height: 200,
                     panels: [panel],
+                    responsive_resize: false,
                     state: { variant: this.variant_name, genome_build: this.build },
                 },
             );
@@ -38,6 +47,11 @@ export default {
             return [
                 ['phewas', ['PheWASLZ', { url: 'https://portaldev.sph.umich.edu/ukbb/v1/statistic/phewas/' }]],
             ];
+        },
+        render_trigger() {
+            // HACK: A synthetic property that can be used to drive re-rendering.
+            // Useful in tabbed UIs, as a trigger for when the phewas window receives focus.
+            return this.allow_render ? this.variant_name : this.variant_name;
         },
     },
     methods: {
@@ -56,13 +70,18 @@ export default {
         },
     },
     watch: {
-        variant_name() {
-            // FIXME: Set this up to only re-render when the phewas tab is actually selected. This will improve gwas plot performance and avoid some positioning/rendering issues as screen moves
-            if (!this.plot) {
-                return;
+        allow_render(value) {
+            const { variant_name: variant } = this;
+            if (value && variant) {
+                // The very first time the user views this component, allow a plot to be created;
+                //   this will trigger something in the template that initiates rendering
+                this.rendered = true;
             }
-            this.plot.curtain.hide();
-            this.plot.applyState({ variant: this.variant_name });
+            if (this.plot && variant) {
+                // Update an existing PheWAS plot when the user opens this tab
+                this.plot.curtain.hide();
+                this.plot.applyState({ variant });
+            }
         },
     },
     components: { LzPlot },
@@ -71,7 +90,7 @@ export default {
 
 <template>
 <div>
-  <p v-if="!variant_name">
+  <p v-if="!variant_name || !rendered">
     Please select a variant in order to generate a PheWAS plot. You can click on any scatter plot
     point in an association track.
   </p>

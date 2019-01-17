@@ -24,6 +24,9 @@ export default {
         //  Some- esp LZ plots- behave very oddly when wrapped as a nested observable; we can
         //  bypass these problems by assigning them as static properties instead of nested
         //  observables.
+
+        this.PHEWAS_TAB = 1;
+
         this.assoc_plot = null;
         this.assoc_sources = null;
 
@@ -45,6 +48,7 @@ export default {
             // State to be tracked across all components
             build: null,
             study_names: [],
+            selected_tab: 0,
 
             // For the "phewas plot" label:
             tmp_phewas_study: null,
@@ -85,7 +89,7 @@ export default {
 
                 // Prevent weird resize behavior when switching tabs
                 const base_assoc_layout = getBasicLayout(state, panels);
-                base_assoc_layout.responsize_resize = false;
+                base_assoc_layout.responsive_resize = false;
                 this.base_assoc_layout = base_assoc_layout;
             } else {
                 addPanels(this.assoc_plot, this.assoc_sources, panels, sources);
@@ -212,7 +216,8 @@ export default {
     </div>
 
     <bs-card no-body>
-      <bs-tabs pills card vertical style="min-height:750px;">
+      <bs-tabs pills card vertical v-model="selected_tab"
+               style="min-height:750px;">
         <bs-tab title="GWAS">
           <lz-plot v-if="has_studies"
                    :show_loading="true"
@@ -236,7 +241,8 @@ export default {
           </template>
           <phewas-maker :variant_name="tmp_phewas_variant" :build="build"
                         :your_study="tmp_phewas_study"
-                        :your_logpvalue="tmp_phewas_logpvalue" />
+                        :your_logpvalue="tmp_phewas_logpvalue"
+                        :allow_render="selected_tab === PHEWAS_TAB"/>
         </bs-tab>
         <bs-tab title="Export" :disabled="!has_studies">
           <export-data :has_credible_sets="has_credible_sets"
